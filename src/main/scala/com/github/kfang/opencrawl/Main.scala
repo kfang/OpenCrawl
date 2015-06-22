@@ -3,6 +3,7 @@ package com.github.kfang.opencrawl
 import java.io.PrintWriter
 
 import org.openqa.selenium.firefox.FirefoxDriver
+import scala.collection.JavaConversions._
 
 object Main {
   val WEB_URL = "http://macys.com"
@@ -17,6 +18,12 @@ object Main {
 
     driver.get(WEB_URL)
     writer.print(driver.getPageSource)
+
+    val aTags = driver.findElementsByTagName("a")
+    aTags.map(webElem => webElem.getAttribute("href")).filter(s => {
+      if(s == null) false else true
+    }).filter(_.contains("-men-")).foreach(println)
+
     driver.close()
   }
 }
