@@ -1,25 +1,28 @@
 package com.github.kfang.opencrawl
 
-import java.io.{PrintWriter, FileOutputStream, File}
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.stream.ActorMaterializer
+import com.github.kfang.opencrawl.routing.V1Routes
 
-import akka.actor.{Props, ActorSystem}
-import akka.stream._
-import akka.stream.scaladsl.{Sink, Source}
+import scala.concurrent.ExecutionContext
 
-object Main {
+object Main extends App {
 
-  implicit val actorSystem = ActorSystem("open-crawl")
-  implicit val materializaer = ActorMaterializer()
+  private val config = new Configuration
+  implicit val system = ActorSystem("open-crawl", config.CONFIG)
+  implicit val materializer = ActorMaterializer()
 
-  val results = new File("results.json")
-  val writer = new PrintWriter(new FileOutputStream(results))
+  implicit val __ctx: ExecutionContext = system.dispatcher
 
-  def main (args: Array[String]): Unit = {
-
-    val source = Source.actorPublisher[String](ProductUrlPublisher.props)
-    val sink = Sink.foreach[String](json => { writer.println(json); writer.flush() })
-
-    val publisher = sink.runWith(source)
-    actorSystem.actorOf(Props(classOf[Forever21Dresses], publisher))
+  for {
+    database  <- Database.connect(config)
+    services  = new Services(system, database)
+    routes    = new V1Routes(services).routes
+    binding   <- Http().bindAndHandle(routes, "0.0.0.0", 8080)
+  } yield {
+    system.log.info(s"Successfully bound ${binding.localAddress}")
+    binding
   }
+
 }
