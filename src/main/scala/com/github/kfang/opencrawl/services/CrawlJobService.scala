@@ -18,6 +18,7 @@ class CrawlJobService(db: Database) extends Actor with ActorLogging {
     .withSupervisionStrategy(Supervision.getResumingDecider)
   private implicit val mat = ActorMaterializer(settings)
   private implicit val __db = db
+  private implicit val __log = log
 
   private val stream = Source
     .queue[CrawlJob](0, OverflowStrategy.backpressure)
@@ -25,7 +26,7 @@ class CrawlJobService(db: Database) extends Actor with ActorLogging {
     .to(Sink.ignore)
     .run()
 
-  private  def queueJob(job: CrawlJob, requester: ActorRef) = {
+  private def queueJob(job: CrawlJob, requester: ActorRef) = {
     val jobID = UUID.randomUUID().toString
     db.CrawlJobs.findAndUpdate(
       selector = BSONDocument("_id" -> jobID),
@@ -39,6 +40,16 @@ class CrawlJobService(db: Database) extends Actor with ActorLogging {
       case Success(Some(j)) =>
         requester ! j
         stream.offer(j)
+    })
+  }
+
+  override def preStart(): Unit = {
+    db.CrawlJobs.find(BSONDocument("status" -> CrawlStatus.Pending.bson)).cursor[CrawlJob]().fold(0)({
+      (r, job) =>
+        stream.offer(job)
+        r + 1
+    }).andThen({
+      case Success(i) => log.info(s"Requeued $i jobs")
     })
   }
 

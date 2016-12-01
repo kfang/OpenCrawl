@@ -1,5 +1,6 @@
 package com.github.kfang.opencrawl.services
 
+import akka.event.LoggingAdapter
 import com.github.kfang.opencrawl.Database
 import com.github.kfang.opencrawl.models.{CrawlJob, CrawlStatus, ElemProp, Finder}
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
@@ -9,7 +10,7 @@ import scala.util.{Failure, Success, Try}
 import scala.collection.JavaConversions._
 import scala.concurrent.{ExecutionContext, Future}
 
-class CrawlJobRunner(implicit db: Database, ctx: ExecutionContext) {
+class CrawlJobRunner(implicit db: Database, ctx: ExecutionContext, log: LoggingAdapter) {
 
   private def markProcessing(job: CrawlJob): Future[CrawlJob] = {
     db.CrawlJobs.findAndUpdate(
@@ -17,7 +18,9 @@ class CrawlJobRunner(implicit db: Database, ctx: ExecutionContext) {
       update = BSONDocument("$set" -> BSONDocument("status" -> CrawlStatus.Processing.bson)),
       fetchNewObject = true,
       upsert = false
-    ).map(_.result[CrawlJob].get)
+    ).map(_.result[CrawlJob].get).andThen({
+      case Success(j) => log.debug(s"[PROCESSING] ${j._id.get}")
+    })
   }
 
   private def markProcessed(job: CrawlJob): Future[CrawlJob] = {
@@ -27,7 +30,9 @@ class CrawlJobRunner(implicit db: Database, ctx: ExecutionContext) {
       update = job.copy(status = Some(status), processedOn = Some(System.currentTimeMillis())),
       fetchNewObject = true,
       upsert = false
-    ).map(_.result[CrawlJob].get)
+    ).map(_.result[CrawlJob].get).andThen({
+      case Success(j) => log.debug(s"[${status.entryName.toUpperCase}] ${j._id.get}")
+    })
   }
 
   def run(j0: CrawlJob): Future[CrawlJob] = {
