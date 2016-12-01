@@ -37,7 +37,7 @@ class CrawlJobRunner(implicit db: Database, ctx: ExecutionContext, log: LoggingA
 
   def run(j0: CrawlJob): Future[CrawlJob] = {
     markProcessing(j0).map(job => {
-      val driver = new HtmlUnitDriver()
+      val driver = new HtmlUnitDriver(false)
 
       Try(driver.get(job.url))
 
@@ -46,6 +46,9 @@ class CrawlJobRunner(implicit db: Database, ctx: ExecutionContext, log: LoggingA
           val elements = field.finder match {
             case Finder.XPathElem  => List(driver.findElementByXPath(field.finderArgs))
             case Finder.XPathElems => driver.findElementsByXPath(field.finderArgs).toList
+
+            case Finder.TagNameElem  => List(driver.findElementByTagName(field.finderArgs))
+            case Finder.TagNameElems => driver.findElementsByTagName(field.finderArgs).toList
           }
 
           field.prop match {
@@ -60,7 +63,9 @@ class CrawlJobRunner(implicit db: Database, ctx: ExecutionContext, log: LoggingA
         }
       })
 
-      job.copy(fields = fields)
+      val pageTitle = Try(driver.getTitle).toOption
+
+      job.copy(fields = fields, pageTitle = pageTitle)
     }).flatMap(j1 => {
       markProcessed(j1)
     })

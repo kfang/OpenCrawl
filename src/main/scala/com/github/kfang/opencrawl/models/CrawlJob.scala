@@ -27,10 +27,11 @@ case class CrawlJob(
   createdOn: Option[Long],
   processedOn: Option[Long],
   url: String,
-  fields: Seq[CrawlJobField]
+  fields: Seq[CrawlJobField],
+  pageTitle: Option[String]
 )
 
 object CrawlJob {
-  implicit val __jsf: RootJsonFormat[CrawlJob] = jsonFormat6(CrawlJob.apply)
+  implicit val __jsf: RootJsonFormat[CrawlJob] = jsonFormat7(CrawlJob.apply)
   implicit val __bsf = Macros.handler[CrawlJob]
 }
