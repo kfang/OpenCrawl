@@ -29,7 +29,8 @@ dockerfile in docker := {
   val jarTarget = s"/app/${jarFile.getName}"
 
   // Make a colon separated classpath with the JAR file
-  val classpathString = classpath.files.map("/app/" + _.getName).mkString(":") + ":" + jarTarget
+//  val classpathString = classpath.files.map("/app/" + _.getName).mkString(":") + ":" + jarTarget
+  val cp = s"""$jarTarget:/app/*"""
 
   new Dockerfile {
     // Base image
@@ -41,7 +42,7 @@ dockerfile in docker := {
     //expose the port
     expose(8080)
     // On launch run Java with the classpath and the main class
-    entryPointShell("java", "-cp", classpathString, "${JAVA_OPTS}", mainclass)
+    entryPointShell("java", "-cp", cp, "${JAVA_OPTS}", mainclass)
   }
 }
 
