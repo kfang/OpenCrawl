@@ -12,7 +12,11 @@ case class Database(config: Configuration, db: DefaultDB) {
 object Database {
   def connect(config: Configuration)(implicit ctx: ExecutionContext): Future[Database] = {
     val driver: MongoDriver = MongoDriver(config.CONFIG)
+
+    driver.system.log.info(s"Connecting to ${config.MONGO_NODES}")
     val connection: MongoConnection = driver.connection(nodes = config.MONGO_NODES)
+
+    driver.system.log.info(s"Using DB: ${config.MONGO_DATABASE}")
     for {
       db <- connection.database(config.MONGO_DATABASE)
     } yield {
