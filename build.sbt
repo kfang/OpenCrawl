@@ -47,8 +47,13 @@ dockerfile in docker := {
 
 imageNames in docker := Seq(
   ImageName(
-    namespace = Some(organization.value),
+    namespace = Some("kfang"),
     repository = name.value,
     tag = Some("v" + version.value)
+  ),
+  ImageName(
+    namespace = Some("kfang"),
+    repository = name.value,
+    tag = Some("latest")
   )
 )
