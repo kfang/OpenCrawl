@@ -1,6 +1,6 @@
 package com.github.kfang.opencrawl.models
 
-import reactivemongo.bson.{BSONDocument, BSONHandler, Macros}
+import reactivemongo.bson.Macros
 import spray.json.DefaultJsonProtocol._
 import spray.json.RootJsonFormat
 

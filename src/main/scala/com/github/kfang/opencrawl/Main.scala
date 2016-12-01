@@ -18,7 +18,7 @@ object Main extends App {
   for {
     database  <- Database.connect(config)
     services  = new Services(system, database)
-    routes    = new V1Routes(services).routes
+    routes    = new V1Routes(database, services).routes
     binding   <- Http().bindAndHandle(routes, "0.0.0.0", 8080)
   } yield {
     system.log.info(s"Successfully bound ${binding.localAddress}")
