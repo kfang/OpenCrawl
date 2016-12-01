@@ -39,7 +39,7 @@ class CrawlJobRunner(implicit db: Database, ctx: ExecutionContext, log: LoggingA
     markProcessing(j0).map(job => {
       val driver = new HtmlUnitDriver()
 
-      driver.get(job.url)
+      Try(driver.get(job.url))
 
       val fields = job.fields.map(field => {
         Try {
