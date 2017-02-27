@@ -18,6 +18,8 @@ import scala.util.{Failure, Success}
 
 class V1Routes(db: Database, services: Services)(implicit ctx: ExecutionContext) {
 
+  implicit val __srvs = services
+
   private def queueJob(job: CrawlJob): Future[CrawlJob] = {
     implicit val __to = Timeout(10.seconds)
     services.crawlJobService.ask(job).mapTo[CrawlJob]
@@ -59,7 +61,8 @@ class V1Routes(db: Database, services: Services)(implicit ctx: ExecutionContext)
 
 
   val routes: Route = pathPrefix("v1"){
-    crawlJobRoutes
+    crawlJobRoutes ~
+    new JsoupRoutes().routes
   }
 
 }

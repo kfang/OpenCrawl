@@ -6,6 +6,7 @@ import akka.stream.ActorMaterializer
 import com.github.kfang.opencrawl.routing.V1Routes
 
 import scala.concurrent.ExecutionContext
+import scala.util.Failure
 
 object Main extends App {
 
@@ -15,7 +16,7 @@ object Main extends App {
 
   implicit val __ctx: ExecutionContext = system.dispatcher
 
-  for {
+  private val _start = for {
     database  <- Database.connect(config)
     services  = new Services(system, database)
     routes    = new V1Routes(database, services).routes
@@ -24,5 +25,11 @@ object Main extends App {
     system.log.info(s"Successfully bound ${binding.localAddress}")
     binding
   }
+
+  _start.andThen({
+    case Failure(err) =>
+      system.log.error(err, "System Failed to Start")
+      system.terminate()
+  })
 
 }
