@@ -4,11 +4,13 @@ import akka.event.LoggingAdapter
 import com.github.kfang.opencrawl.Database
 import com.github.kfang.opencrawl.models.{CrawlJob, CrawlStatus, ElemProp, Finder}
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
+import reactivemongo.api.WriteConcern
 import reactivemongo.bson.BSONDocument
 
 import scala.util.{Failure, Success, Try}
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 
 class CrawlJobRunner(implicit db: Database, ctx: ExecutionContext, log: LoggingAdapter) {
 
@@ -17,7 +19,14 @@ class CrawlJobRunner(implicit db: Database, ctx: ExecutionContext, log: LoggingA
       selector = BSONDocument("_id" -> job._id),
       update = BSONDocument("$set" -> BSONDocument("status" -> CrawlStatus.Processing.bson)),
       fetchNewObject = true,
-      upsert = false
+      upsert = false,
+      sort = None,
+      fields = None,
+      bypassDocumentValidation = false,
+      writeConcern = WriteConcern.Acknowledged,
+      maxTime = Some(300.seconds),
+      collation = None,
+      arrayFilters = Nil
     ).map(_.result[CrawlJob].get).andThen({
       case Success(j) => log.debug(s"[PROCESSING] ${j._id.get}")
     })
@@ -29,7 +38,14 @@ class CrawlJobRunner(implicit db: Database, ctx: ExecutionContext, log: LoggingA
       selector = BSONDocument("_id" -> job._id),
       update = job.copy(status = Some(status), processedOn = Some(System.currentTimeMillis())),
       fetchNewObject = true,
-      upsert = false
+      upsert = false,
+      sort = None,
+      fields = None,
+      bypassDocumentValidation = false,
+      writeConcern = WriteConcern.Acknowledged,
+      maxTime = Some(300.seconds),
+      collation = None,
+      arrayFilters = Nil
     ).map(_.result[CrawlJob].get).andThen({
       case Success(j) => log.debug(s"[${status.entryName.toUpperCase}] ${j._id.get}")
     })
@@ -45,10 +61,10 @@ class CrawlJobRunner(implicit db: Database, ctx: ExecutionContext, log: LoggingA
         Try {
           val elements = field.finder match {
             case Finder.XPathElem  => List(driver.findElementByXPath(field.finderArgs))
-            case Finder.XPathElems => driver.findElementsByXPath(field.finderArgs).toList
+            case Finder.XPathElems => driver.findElementsByXPath(field.finderArgs).asScala.toList
 
             case Finder.TagNameElem  => List(driver.findElementByTagName(field.finderArgs))
-            case Finder.TagNameElems => driver.findElementsByTagName(field.finderArgs).toList
+            case Finder.TagNameElems => driver.findElementsByTagName(field.finderArgs).asScala.toList
           }
 
           field.prop match {

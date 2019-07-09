@@ -26,24 +26,24 @@ class V1Routes(db: Database, services: Services)(implicit ctx: ExecutionContext)
   }
 
   private def getJob(id: UUID): Future[Option[CrawlJob]] = {
-    db.CrawlJobs.find(BSONDocument("_id" -> id.toString)).one[CrawlJob]
+    db.CrawlJobs.find(BSONDocument("_id" -> id.toString), None).one[CrawlJob]
   }
 
   private def removeJob(id: UUID): Future[Boolean] = {
-    db.CrawlJobs.remove(BSONDocument("_id" -> id.toString)).map(_.n == 1)
+    db.CrawlJobs.delete().one(BSONDocument("_id" -> id.toString)).map(_.n == 1)
   }
 
   private val crawlJobRoutes: Route = pathPrefix("crawl-jobs"){
     //Create a Job
     (post & pathEnd & entity(as[CrawlJob])){
-      (job) => onComplete(queueJob(job)){
+      job => onComplete(queueJob(job)){
         case Success(j) => complete(j)
         case Failure(e) => complete(StatusCodes.BadRequest -> e.getMessage)
       }
     } ~
     //Retrieve a Job
     (get & path(JavaUUID)){
-      (uuid) => onComplete(getJob(uuid)){
+      uuid => onComplete(getJob(uuid)){
         case Success(Some(j)) => complete(j)
         case Success(None)    => complete(StatusCodes.NotFound)
         case Failure(e)       => complete(StatusCodes.InternalServerError -> e.getMessage)
@@ -51,7 +51,7 @@ class V1Routes(db: Database, services: Services)(implicit ctx: ExecutionContext)
     } ~
     //Delete a Job
     (delete & path(JavaUUID)){
-      (uuid) => onComplete(removeJob(uuid)){
+      uuid => onComplete(removeJob(uuid)){
         case Success(true)  => complete(StatusCodes.NoContent)
         case Success(false) => complete(StatusCodes.NotFound)
         case Failure(e)     => complete(StatusCodes.InternalServerError -> e.getMessage)

@@ -6,7 +6,7 @@ import enumeratum._
 sealed abstract class ElemProp(override val entryName: String) extends EnumEntry
 
 object ElemProp extends Enum[ElemProp] with EnumSerializer[ElemProp]{
-  val values: Seq[ElemProp] = findValues
+  val values = findValues
 
   case object Attribute extends ElemProp("attribute")
   case object CSS extends ElemProp("css")

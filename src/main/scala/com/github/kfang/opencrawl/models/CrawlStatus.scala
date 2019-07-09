@@ -10,7 +10,7 @@ sealed abstract class CrawlStatus(override val entryName: String) extends EnumEn
 
 object CrawlStatus extends Enum[CrawlStatus] with EnumSerializer[CrawlStatus] {
 
-  override val values: Seq[CrawlStatus] = findValues
+  override val values = findValues
 
   case object Pending extends CrawlStatus("pending")
   case object Processing extends CrawlStatus("processing")
