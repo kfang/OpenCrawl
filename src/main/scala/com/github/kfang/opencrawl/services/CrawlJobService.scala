@@ -4,12 +4,14 @@ import java.util.UUID
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings, OverflowStrategy, Supervision}
-import akka.stream.javadsl.Sink
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Sink, Source}
 import com.github.kfang.opencrawl.Database
 import com.github.kfang.opencrawl.models.{CrawlJob, CrawlStatus}
+import reactivemongo.api.WriteConcern
 import reactivemongo.bson.BSONDocument
+
 import scala.util.Success
+import scala.concurrent.duration._
 
 class CrawlJobService(db: Database) extends Actor with ActorLogging {
 
@@ -35,7 +37,14 @@ class CrawlJobService(db: Database) extends Actor with ActorLogging {
         createdOn = Some(System.currentTimeMillis())
       ),
       fetchNewObject = true,
-      upsert = true
+      upsert = true,
+      sort = None,
+      fields = None,
+      bypassDocumentValidation = false,
+      writeConcern = WriteConcern.Acknowledged,
+      maxTime = Some(300.seconds),
+      collation = None,
+      arrayFilters = Nil
     ).map(_.result[CrawlJob]).andThen({
       case Success(Some(j)) =>
         requester ! j
@@ -44,7 +53,7 @@ class CrawlJobService(db: Database) extends Actor with ActorLogging {
   }
 
   override def preStart(): Unit = {
-    db.CrawlJobs.find(BSONDocument("status" -> CrawlStatus.Pending.bson)).cursor[CrawlJob]().fold(0)({
+    db.CrawlJobs.find(BSONDocument("status" -> CrawlStatus.Pending.bson), None).cursor[CrawlJob]().fold(0)({
       (r, job) =>
         stream.offer(job)
         r + 1

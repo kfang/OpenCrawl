@@ -2,21 +2,24 @@ name := "open-crawl"
 
 organization := "com.github.kfang"
 
-version := "0.0.0"
+version := "0.0.1"
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.8"
+
+scalacOptions ++= Seq("-feature", "-deprecation")
 
 libraryDependencies ++= Seq(
-  "org.seleniumhq.selenium" % "selenium-java" % "3.0.1",
-  "org.seleniumhq.selenium" % "selenium-support" % "3.0.1",
-  "org.seleniumhq.selenium" % "htmlunit-driver" % "2.23.1",
-  "org.jsoup" % "jsoup" % "1.10.2",
-  "com.beachape" %% "enumeratum" % "1.4.16",
-  "com.typesafe.akka" %% "akka-http" % "10.0.0",
-  "com.typesafe.akka" %% "akka-http-spray-json" % "10.0.0",
-  "com.typesafe.akka" %% "akka-slf4j" % "2.4.14",
-  "org.reactivemongo" %% "reactivemongo" % "0.12.0",
-  "ch.qos.logback" % "logback-classic" % "1.1.3"
+  "org.seleniumhq.selenium" % "selenium-java" % "3.141.59",
+  "org.seleniumhq.selenium" % "selenium-support" % "3.141.59",
+  "org.seleniumhq.selenium" % "htmlunit-driver" % "2.35.1",
+  "org.jsoup" % "jsoup" % "1.12.1",
+  "com.beachape" %% "enumeratum" % "1.5.9",
+  "com.typesafe.akka" %% "akka-http" % "10.1.8",
+  "com.typesafe.akka" %% "akka-http-spray-json" % "10.1.8",
+  "com.typesafe.akka" %% "akka-slf4j" % "2.5.23",
+  "com.typesafe.akka" %% "akka-stream" % "2.5.23",
+  "org.reactivemongo" %% "reactivemongo" % "0.18.1",
+  "ch.qos.logback" % "logback-classic" % "1.2.3"
 )
 
 
@@ -35,7 +38,7 @@ dockerfile in docker := {
 
   new Dockerfile {
     // Base image
-    from("java")
+    from("openjdk:12")
     // Add all files on the classpath
     add(classpath.files, "/app/")
     // Add the JAR file
